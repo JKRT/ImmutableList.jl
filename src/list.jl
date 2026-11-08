@@ -120,16 +120,6 @@ Base.convert(::Type{List{T}}, x::Cons{T}) where {T} = x
 Base.convert(::Type{Cons{T}}, x::Cons{T}) where {T} = x
 Base.convert(::Type{Nil}, x::Nil) = nil
 
-#= Convert ImmutableList to Vector - needed because many struct fields
-   transitioned from List{T} to Vector{T} but callers still use list(...) =#
-function Base.convert(::Type{Vector{T}}, x::Cons) where {T}
-  result = T[]
-  for item in x
-    push!(result, convert(T, item))
-  end
-  result
-end
-Base.convert(::Type{Vector{T}}, ::Nil) where {T} = T[]
 
 
 Base.promote_rule(a::Type{Cons{T}}, b::Type{Cons{S}}) where {T,S} = let
