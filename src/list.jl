@@ -119,8 +119,14 @@ Base.convert(::Type{Nil}, x::Nil) = nil
 
 
 
-Base.promote_rule(a::Type{Cons{T}}, b::Type{Cons{S}}) where {T,S} = let
-  el_same(promote_type(T,S), a, b)
+"""
+    promote_rule(::Type{Cons{T}}, ::Type{Cons{S}})
+
+As for Vectors: the list type whose element type is `promote_type(T, S)`, `Cons` when it is neither.
+"""
+function Base.promote_rule(a::Type{Cons{T}}, b::Type{Cons{S}}) where {T, S}
+  local U::Type = promote_type(T, S)
+  return U === T ? a : U === S ? b : Cons
 end
 
 #= Definition of eltype =#
@@ -140,9 +146,13 @@ Base.eltype(::Type{Nil}) = let
   Nil
 end
 
-Base.eltype(::Nil) = let
-  Any
-end
+"""
+    eltype(::Nil{T})
+
+`T`: `Any` for `nil`, the declared type for the empty list a `List{T}` annotation makes.
+"""
+Base.eltype(::Nil{T}) where {T} = T
+Base.eltype(::Type{Nil{T}}) where {T} = T
 
 """
   O(1) Reverse of a nil list is nil

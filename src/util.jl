@@ -210,43 +210,20 @@ function listEmpty(lst::Nil)::Bool
 end
 
 """
-```
-Base.first(lst::Nil)
-```
-A list consisting only of nil is nil.
-"""
-Base.first(lst::Nil) = let
-  lst
-end
+    first(lst::List)
 
+The first element (the head), in O(1). `first(nil)` is `nil`.
+"""
+Base.first(lst::Cons) = lst.head
+Base.first(lst::Nil) = lst
 
 """
-Both first and last is the same for a nil list.
-"""
-Base.last(lst::Nil) = let
-  lst
-end
+    last(::Nil)
 
+`nil`: `first`, `last` and `tail` of an empty list are the empty list. `last(lst::Cons)` (the last
+element) is in interface.jl.
 """
-Last on a cons cell is the tail.
-"""
-Base.last(lst::Cons) = let
-  lst.tail
-end
-
-"""
-```
-Base.first(lst::Cons{T})
-```
-Returns the head of the list
-"""
-Base.first(lst::Cons) = let
-  lst.head
-end
-
-Base.show(io::IO, ::MIME"text/plain", lst::List) = begin
-  print(io, string(lst))
-end
+Base.last(lst::Nil) = lst
 
 export listAppend
 export listReverse

@@ -44,6 +44,7 @@ export _listAppend, listAppend
 
 using .ListDef
 include("util.jl")
+include("interface.jl")
 
 include("unsafe.jl")
 
