@@ -182,6 +182,9 @@ end
   lst = List{Int}(i*2 for i in list(1,2,3))
   @test sum(lst) == 12
   #= Test guard statement =#
+  #= Over another iterable the function is called in the iteration order. =#
+  local order = Int[]
+  @test collect(List{Int}((push!(order, i); 2 * i) for i in 1:3)) == [2, 4, 6] && order == [1, 2, 3]
   lst2 = List{Int}(i for i in list(1,2,3) if i == 3)
   @test listHead(lst2) == 3
   @test length(lst2) == 1

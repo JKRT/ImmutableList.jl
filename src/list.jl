@@ -232,14 +232,12 @@ end
 #= Support for primitive constructs. Numbers. Integer bool e.t.c =#
 function list(els::T...)::List{T} where {T <: Number}
   if @generated
-    #println("Generate 1")
     lst = :(nil)
     for i in length(els):-1:1
       lst = :(Cons{$(T)}(els[$(i)], $(lst)))
     end
     return lst
   else
-    #println("Generate 2")
     local lst::List{T} = nil
     for i in length(els):-1:1
       lst = Cons{T}(els[i], lst)
@@ -250,14 +248,12 @@ end
 
 function list(els::T...)::List{T} where {T}
   if @generated
-    println("Generate 1")
     lst = :(nil)
     for i in length(els):-1:1
       lst = :(Cons{$(T)}(els[$(i)], $(lst)))
     end
     return lst
   else
-    #println("Generate 2")
     local lst::List{T} = nil
     for i in length(els):-1:1
       lst = Cons{T}(els[i], lst)
@@ -466,13 +462,16 @@ function List{TYPE}(C::Base.Generator{Cons{T0}, T1})::Cons{TYPE} where {TYPE, T0
 end
 
 import ..ImmutableListException
+"""
+    List{TYPE}(C::Base.Generator)::List{TYPE}
+
+The list of the generator's values, each a `TYPE`, in its order; the function is called in that order too.
+"""
 function List{TYPE}(C::Base.Generator)::List{TYPE} where {TYPE}
-  local iter = C.iter
-  local func::Function = C.f
-  local seq = collect(iter)
+  local vals::Vector{TYPE} = TYPE[(C.f(x))::TYPE for x in C.iter]
   local lst::List{TYPE} = nil
-  for i in reverse!(seq)
-    lst = Cons{TYPE}(func(i)::TYPE, lst)::Cons{TYPE}
+  for i::Int in lastindex(vals):-1:1
+    lst = Cons{TYPE}((@inbounds vals[i]), lst)
   end
   return lst
 end
