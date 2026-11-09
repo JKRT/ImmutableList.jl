@@ -1,5 +1,8 @@
 # ImmutableList
 
+[![Tests](https://github.com/OpenModelica/ImmutableList.jl/actions/workflows/CI.yaml/badge.svg?branch=master)](https://github.com/OpenModelica/ImmutableList.jl/actions/workflows/CI.yaml)
+[![OMJL integration](https://github.com/OpenModelica/ImmutableList.jl/actions/workflows/omjl.yml/badge.svg?branch=master)](https://github.com/OpenModelica/ImmutableList.jl/actions/workflows/omjl.yml)
+
 A singly linked immutable list for Julia: MetaModelica's `list`, as used by the OpenModelica
 compiler packages ([OMFrontend.jl](https://github.com/OpenModelica/OMFrontend.jl),
 [OMBackend.jl](https://github.com/OpenModelica/OMBackend.jl)), with Julia's collection interfaces.
