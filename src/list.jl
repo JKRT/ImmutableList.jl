@@ -378,7 +378,7 @@ Base.iterate(l::List, state::List) = iterate(state)
 function list(F, C::Base.Generator)
   #local seqArr = collect(seq)
   local iter = C.iter
-  local func::Function = C.f
+  local func = C.f
   local lst = nil
   local seq = collect(iter)
   local rseq = reverse!(seq)
@@ -395,8 +395,8 @@ list(C::Base.Generator) = list(i->i, C)
 author:johti17
 """
 function list(C::Base.Generator{UnitRange{T0}, T1}) where {T0, T1}
-  local iter::UnitRange{T0} = C.iter
-  local func::Function = C.f
+  local iter = C.iter
+  local func = C.f
   local lst = nil
   local iterRev = reverse(iter)
   for i in iterRev
@@ -410,16 +410,9 @@ end
 author:johti17
 """
 function list(C::Base.Generator{Vector{T0}, T1}) where {T0, T1}
-  local iter::Vector{T0} = C.iter
-  isempty(iter) && return nil
+  isempty(C.iter) && return nil
   # Fixed-eltype build; see the Cons-generator method for the rationale.
-  local vals = Base.collect(Base.Generator(C.f, iter))
-  local S = eltype(vals)
-  local lst::List = nil
-  for i in lastindex(vals):-1:1
-    lst = Cons{S}((@inbounds vals[i]), lst)
-  end
-  return lst
+  return _generatedList(C)
 end
 
  """
@@ -430,8 +423,56 @@ function list(C::Base.Generator{Cons{T0}, T1}) where {T0, T1}
   # Map into a Vector first: the eltype is computed ONCE and the cons chain is
   # built with a fixed Cons{S} - the per-element _cons typejoin/convert otherwise
   # rebuilds the accumulated tail on every eltype change (quadratic).
-  local vals = Base.collect(Base.Generator(C.f, C.iter))
-  local S = eltype(vals)
+  return _generatedList(C)
+end
+
+"""
+    _generatedList(C::Base.Generator) -> List
+
+The list of the values of `C`, in its order, as a `Cons{S}` with the element type `collect(C)` gives: the inferred one
+where it is concrete, else the `promote_typejoin` of the values' types; `nil` for none. Without `collect` where the
+element type is not inferred (a generator in a cycle of recursive callers, OMFrontend's printers): `collect`'s widening
+is then compiled as calls on abstract types (`setindex_widen_up_to`, `convert(Vector{T}, x)`), and a package that adds a
+method one of them matches (Unzip, Symbolics) invalidated the compiled code, with all its callers, at each load
+(OMFrontend 2026-11-16: about 9600 compiled methods). The values are kept in a `Vector{Any}` and the element type is
+joined as they come: calls on concrete types, or dispatched at run time. Where the element type is inferred and concrete
+the values go into a `Vector` of it (`_typedList`), not through `collect` either: compiled for a generator whose type is
+not inferred, both branches are, and `collect` brought its widening back.
+"""
+function _generatedList(C::Base.Generator)::List
+  local ET = Base.@default_eltype(C)
+  isconcretetype(ET) && return _typedList(C, ET)
+  local vals = Any[]
+  local S::Type = Union{}
+  for x in C.iter
+    local v = C.f(x)
+    push!(vals, v)
+    S = Base.promote_typejoin(S, typeof(v))
+  end
+  return _consChain(vals, S)
+end
+
+"""
+    _typedList(C::Base.Generator, ET) -> List
+
+The list `Cons{ET}` of the values of `C`, whose element type `ET` is inferred and concrete; `nil` for none.
+"""
+function _typedList(C::Base.Generator, ::Type{ET})::List where {ET}
+  #= Vector{ET}(), not ET[]: compiled for an unknown ET that is getindex(::DataType), which StaticArrays' `SA[...]`
+     matches =#
+  local vals = Vector{ET}()
+  for x in C.iter
+    push!(vals, C.f(x))
+  end
+  return _consChain(vals, ET)
+end
+
+"""
+    _consChain(vals::Vector, S::Type) -> List
+
+`vals` as a list `Cons{S}`, in their order; `nil` for none.
+"""
+function _consChain(vals::Vector, S::Type)::List
   local lst::List = nil
   for i in lastindex(vals):-1:1
     lst = Cons{S}((@inbounds vals[i]), lst)
@@ -450,7 +491,7 @@ list(C::Base.Generator{<:Nil, T1}) where {T1} = nil
  author:johti17
 """
 function List{TYPE}(C::Base.Generator{Cons{T0}, T1})::Cons{TYPE} where {TYPE, T0, T1}
-  local iter::List{T0} =  C.iter
+  local iter = C.iter
   local func = C.f
   local lst::List{TYPE} = nil
   while iter isa Cons
