@@ -169,6 +169,21 @@ end
   @test length(lst2) == 1
 end
 
+@testset "List comprehension with an element type not inferred" begin
+  #= The function's result type is hidden from inference: the list is built without collect's widening, with the
+     element type collect gives (the promote_typejoin of the values' types) =#
+  local f = Base.inferencebarrier(x::Int -> x > 1 ? 2.0 * x : x)
+  local fromVector = list(f(x) for x in [1, 2, 3])
+  local fromList = list(f(x) for x in list(1, 2, 3))
+  @test fromVector isa Cons{eltype(collect(f(x) for x in [1, 2, 3]))}
+  @test eltype(fromVector) === Real
+  @test fromList isa Cons{Real}
+  @test collect(fromVector) == [1, 4.0, 6.0] == collect(fromList)
+  local g = Base.inferencebarrier(x::Int -> string(x))
+  @test list(g(x) for x in [1, 2]) isa Cons{String}
+  @test list(g(x) for x in Int[]) === nil
+end
+
 @testset "listAppend type widening" begin
   lst = listAppend(list(1, 2, 3), list(4.0, 5))
   @test eltype(lst) === Real

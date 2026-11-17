@@ -56,6 +56,11 @@ Loading the package invalidates no compiled code (checked with `jl_debug_method_
 `a` comes after `b`). `ImmutableList.Unsafe` has the destructive operations (`listSetFirst`,
 `listSetRest`, `listReverseInPlaceUnsafe`) for code that needs them.
 
+## Changes in 0.6.1
+- `list(::Generator)` whose element type is not inferred builds a `Vector` of the concrete element type
+  instead of calling `collect`: its compiled code is no longer invalidated by packages that extend
+  `collect`'s widening or `getindex(::Type)` (Unzip, StaticArrays).
+
 ## Changes in 0.6.0
 - `last(l)` is the last element (it was the tail); the tail is `tail(l)` (or `listRest`).
 - `map` returns a list (it returned a Vector); `filter`, `vcat`, `reverse`, `first(l, n)` and the rest
